@@ -9,10 +9,12 @@ const { handleUserCommands } = require('./handlers/user');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_ID;
 
+// Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI).then(() => {
     console.log('MongoDB connected');
 });
 
+// Define bot commands
 bot.start(async (ctx) => {
     if (ctx.from.id.toString() === ADMIN_ID) {
         return showAdminMenu(ctx);
@@ -27,4 +29,13 @@ bot.command('admin', (ctx) => {
     return showAdminMenu(ctx);
 });
 
-bot.launch();
+// 🚫 Fix 409 Conflict error by removing old webhook
+(async () => {
+    try {
+        await bot.telegram.deleteWebhook();
+        await bot.launch();
+        console.log('🤖 Bot is up and running...');
+    } catch (err) {
+        console.error('❌ Failed to launch bot:', err);
+    }
+})();
