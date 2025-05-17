@@ -1,11 +1,21 @@
 const Category = require('../models/Category');
 const Note = require('../models/Note');
-const { Markup } = require('telegraf');
 
 async function handleUserCommands(ctx) {
-    const categories = await Category.find({});
-    const buttons = categories.map(cat => [cat.name]);
-    return ctx.reply('📁 Choose a category:', Markup.keyboard(buttons).resize());
+    const categories = await Category.find();
+    if (categories.length === 0) {
+        return ctx.reply('❌ No categories found.');
+    }
+
+    let msg = '📂 Available Categories:\n';
+    categories.forEach(cat => {
+        msg += `- ${cat.name}\n`;
+    });
+
+    ctx.reply(msg);
 }
 
-module.exports = { handleUserCommands };
+module.exports = {
+    handleUserCommands
+};
+

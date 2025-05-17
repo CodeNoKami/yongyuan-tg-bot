@@ -1,20 +1,16 @@
 require('dotenv').config();
-const { Telegraf, Markup } = require('telegraf');
+const { Telegraf } = require('telegraf');
 const mongoose = require('mongoose');
-const Category = require('./models/Category');
-const Note = require('./models/Note');
-const { showAdminMenu } = require('./handlers/admin');
+const { showAdminMenu, handleAdminActions } = require('./handlers/admin');
 const { handleUserCommands } = require('./handlers/user');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_ID;
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI).then(() => {
-    console.log('MongoDB connected');
-});
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('✅ MongoDB connected'))
+    .catch(err => console.error('❌ MongoDB Error:', err));
 
-// Define bot commands
 bot.start(async (ctx) => {
     if (ctx.from.id.toString() === ADMIN_ID) {
         return showAdminMenu(ctx);
@@ -29,13 +25,11 @@ bot.command('admin', (ctx) => {
     return showAdminMenu(ctx);
 });
 
-// 🚫 Fix 409 Conflict error by removing old webhook
-(async () => {
-    try {
-        await bot.telegram.deleteWebhook();
-        await bot.launch();
-        console.log('🤖 Bot is up and running...');
-    } catch (err) {
-        console.error('❌ Failed to launch bot:', err);
-    }
-})();
+bot.on('callback_query', handleAdminActions);
+bot.on('message', handleAdminActions);
+
+bot.launch().then(() => {
+    console.log('🚀 Bot is up and running!');
+}).catch((err) => {
+    console.error('❌ Failed to launch bot:', err);
+});
