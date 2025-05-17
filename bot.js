@@ -1,70 +1,90 @@
 require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const mongoose = require('mongoose');
+
 const Category = require('./models/Category');
 const Note = require('./models/Note');
+
 const { showAdminMenu, handleAdminActions } = require('./handlers/admin');
 const { handleUserCommands, handleUserCategory } = require('./handlers/user');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_ID;
 
-mongoose.connect(process.env.MONGODB_URI).then(() => {
-    console.log('MongoDB connected');
-}).catch(err => {
-    console.error('MongoDB connection error:', err);
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Middleware to mark admin users
+bot.use((ctx, next) => {
+  ctx.isAdmin = ctx.from && ctx.from.id.toString() === ADMIN_ID;
+  return next();
 });
 
+// /start command handler
 bot.start(async (ctx) => {
-    if (ctx.from.id.toString() === ADMIN_ID) {
-        await ctx.reply('👋 Welcome Admin. Choose an option:', {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '⚙ Admin Menu', callback_data: 'admin_menu' }],
-                    [{ text: '📁 User View (Categories)', callback_data: 'user_menu' }]
-                ]
-            }
-        });
+  try {
+    if (ctx.isAdmin) {
+      await ctx.reply('👋 Welcome Admin. Choose an option:', {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '⚙ Admin Menu', callback_data: 'admin_menu' }],
+            [{ text: '📁 User View (Categories)', callback_data: 'user_menu' }]
+          ]
+        }
+      });
     } else {
-        return handleUserCommands(ctx);
+      await handleUserCommands(ctx);
     }
+  } catch (err) {
+    console.error('Error in /start handler:', err);
+    await ctx.reply('An error occurred. Please try again later.');
+  }
 });
 
-// Handle admin/user menu switch on /start or buttons
+// Handle callback queries
 bot.on('callback_query', async (ctx) => {
+  try {
     const data = ctx.callbackQuery.data;
-    const userId = ctx.from.id.toString();
 
-    if (userId === ADMIN_ID) {
-        if (data === 'admin_menu') {
-            return showAdminMenu(ctx);
-        } else if (data === 'user_menu') {
-            return handleUserCommands(ctx);
-        } else {
-            // Let admin actions handle other callbacks (e.g. category buttons, note buttons)
-            return handleAdminActions(ctx);
-        }
-    } else {
-        // For normal users: handle user category buttons
-        if (data.startsWith('user_cat_')) {
-            return handleUserCategory(ctx);
-        } else {
-            await ctx.answerCbQuery('Unauthorized action.');
-        }
-    }
-});
-
-// Handle text messages from admin for creating categories/notes
-bot.on('message', async (ctx) => {
-    if (ctx.from.id.toString() === ADMIN_ID) {
+    if (ctx.isAdmin) {
+      if (data === 'admin_menu') {
+        await showAdminMenu(ctx);
+      } else if (data === 'user_menu') {
+        await handleUserCommands(ctx);
+      } else {
         await handleAdminActions(ctx);
+      }
+    } else {
+      if (data.startsWith('user_cat_')) {
+        await handleUserCategory(ctx);
+      } else {
+        await ctx.answerCbQuery('Unauthorized action.', { show_alert: true });
+      }
     }
-    // For users, if you want to support text commands or messages, handle here if needed
+  } catch (err) {
+    console.error('Error in callback_query handler:', err);
+  }
 });
 
-bot.launch()
-    .then(() => console.log('🚀 Bot started'))
-    .catch(console.error);
+// Handle text messages (mostly for admin input)
+bot.on('message', async (ctx) => {
+  try {
+    if (ctx.isAdmin) {
+      await handleAdminActions(ctx);
+    }
+    // You can add user text message handling here if needed
+  } catch (err) {
+    console.error('Error in message handler:', err);
+  }
+});
 
+// Start the bot
+bot.launch()
+  .then(() => console.log('🚀 Bot started'))
+  .catch(console.error);
+
+// Graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
