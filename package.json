@@ -1,0 +1,17 @@
+{
+  "name": "telegram-note-bot",
+  "version": "1.0.0",
+  "description": "A Telegram bot for saving and retrieving categorized notes.",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "author": "CodeNoKami",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "mongoose": "^7.3.1",
+    "telegraf": "^4.12.2"
+  }
+}
+
