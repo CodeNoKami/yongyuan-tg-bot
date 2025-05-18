@@ -1,6 +1,8 @@
+// user.js
 const { Markup } = require('telegraf');
 const Category = require('../models/Category');
 const Note = require('../models/Note');
+const sendNote = require('../utils/sendNote');
 
 async function showUserMenu(ctx) {
   try {
@@ -34,17 +36,13 @@ async function handleUserActions(ctx) {
         await ctx.reply('No notes found in this category.');
       } else {
         for (const note of notes) {
-          if (note.text) await ctx.reply(note.text);
-          if (note.link) await ctx.reply(note.link);
-          if (note.fileId) await ctx.replyWithDocument(note.fileId);
-          if (note.photoId) await ctx.replyWithPhoto(note.photoId);
+          await sendNote(ctx, note);
         }
       }
 
       return ctx.answerCbQuery();
     }
 
-    // If callback data doesn't match expected pattern, just answer callback query to remove loading state
     return ctx.answerCbQuery();
 
   } catch (err) {

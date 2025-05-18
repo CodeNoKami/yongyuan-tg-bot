@@ -1,6 +1,8 @@
+// admin.js
 const { Markup } = require('telegraf');
 const Category = require('../models/Category');
 const Note = require('../models/Note');
+const sendNote = require('../utils/sendNote');
 
 const step = {};
 const tempData = {};
@@ -36,10 +38,7 @@ async function handleAdminActions(ctx) {
           await ctx.reply('No notes found in this category.');
         } else {
           for (const note of notes) {
-            if (note.text) await ctx.reply(note.text);
-            if (note.link) await ctx.reply(note.link);
-            if (note.fileId) await ctx.replyWithDocument(note.fileId);
-            if (note.photoId) await ctx.replyWithPhoto(note.photoId);
+            await sendNote(ctx, note);
           }
         }
         return ctx.answerCbQuery();
@@ -112,11 +111,9 @@ async function handleAdminActions(ctx) {
         return ctx.reply('✅ Note deleted.');
       }
 
-      // fallback answerCbQuery to remove loading state
       return ctx.answerCbQuery();
     }
 
-    // Handle admin messages depending on step
     if (ctx.message) {
       if (step[chatId] === 'awaiting_category_name') {
         const categoryName = ctx.message.text?.trim();
@@ -145,15 +142,12 @@ async function handleAdminActions(ctx) {
 
         if (message.text) {
           noteData.text = message.text;
-
-          // Check if text contains a URL entity
           if (message.entities?.some(e => e.type === 'url')) {
             noteData.link = message.text;
           }
         } else if (message.document) {
           noteData.fileId = message.document.file_id;
         } else if (message.photo) {
-          // Use highest resolution photo
           noteData.photoId = message.photo[message.photo.length - 1].file_id;
         } else {
           return ctx.reply('Please send text, a link, a document, or a photo.');
