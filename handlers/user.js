@@ -1,4 +1,3 @@
-// user.js
 const { Markup } = require('telegraf');
 const Category = require('../models/Category');
 const Note = require('../models/Note');
@@ -22,9 +21,7 @@ async function showUserMenu(ctx) {
 
 async function handleUserActions(ctx) {
   try {
-    if (!ctx.callbackQuery) {
-      return;
-    }
+    if (!ctx.callbackQuery) return;
 
     const data = ctx.callbackQuery.data;
 
@@ -36,7 +33,7 @@ async function handleUserActions(ctx) {
         await ctx.reply('No notes found in this category.');
       } else {
         for (const note of notes) {
-          await sendNote(ctx, note);
+          await sendNote(ctx, note); // sendNote must support multi fields (arrays)
         }
       }
 

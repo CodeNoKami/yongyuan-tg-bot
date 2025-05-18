@@ -7,10 +7,11 @@ const NoteSchema = new mongoose.Schema({
         required: true
     },
     text: String,
-    link: String,
-    fileId: String,
-    photoId: String
+    links: [String],
+    fileIds: [String],
+    photoIds: [String]
+}, {
+    timestamps: true // Adds createdAt and updatedAt fields
 });
 
 module.exports = mongoose.model('Note', NoteSchema);
-

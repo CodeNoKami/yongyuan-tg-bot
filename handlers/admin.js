@@ -57,9 +57,9 @@ async function handleAdminActions(ctx) {
         return ctx.reply('Choose a category for the new note:', Markup.inlineKeyboard(buttons));
 
       } else if (data.startsWith('note_cat_')) {
-        tempData[chatId] = { categoryId: data.replace('note_cat_', '') };
+        tempData[chatId] = { categoryId: data.replace('note_cat_', ''), text: '', links: [], fileIds: [], photoIds: [] };
         step[chatId] = 'awaiting_note_content';
-        return ctx.reply('Now send the note content (text, file, image, or link):');
+        return ctx.reply('Now send the note content (you can send multiple messages — type /done when finished):');
 
       } else if (data === 'delete_category') {
         const categories = await Category.find().lean();
@@ -132,31 +132,34 @@ async function handleAdminActions(ctx) {
         }
 
         const message = ctx.message;
-        const noteData = {
-          category: categoryId,
-          text: null,
-          link: null,
-          fileId: null,
-          photoId: null
-        };
-
         if (message.text) {
-          noteData.text = message.text;
+          if (message.text === '/done') {
+            const { text, links, fileIds, photoIds } = tempData[chatId];
+            const noteData = {
+              category: categoryId,
+              text,
+              links,
+              fileIds,
+              photoIds
+            };
+            await Note.create(noteData);
+            step[chatId] = null;
+            tempData[chatId] = {};
+            return ctx.reply('✅ Note saved.');
+          }
+          tempData[chatId].text += (tempData[chatId].text ? '\n' : '') + message.text;
           if (message.entities?.some(e => e.type === 'url')) {
-            noteData.link = message.text;
+            tempData[chatId].links.push(message.text);
           }
         } else if (message.document) {
-          noteData.fileId = message.document.file_id;
+          tempData[chatId].fileIds.push(message.document.file_id);
         } else if (message.photo) {
-          noteData.photoId = message.photo[message.photo.length - 1].file_id;
+          tempData[chatId].photoIds.push(message.photo[message.photo.length - 1].file_id);
         } else {
-          return ctx.reply('Please send text, a link, a document, or a photo.');
+          return ctx.reply('Unsupported message type. Please send text, link, document, or photo.');
         }
 
-        await Note.create(noteData);
-        step[chatId] = null;
-        tempData[chatId] = {};
-        return ctx.reply('✅ Note saved.');
+        return ctx.reply('✅ Part added. Continue or type /done to save.');
       }
     }
 

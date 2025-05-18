@@ -50,7 +50,6 @@ bot.start(async (ctx) => {
 bot.on('callback_query', async (ctx) => {
   try {
     const data = ctx.callbackQuery?.data;
-    
 
     if (ctx.isAdmin) {
       switch (data) {
