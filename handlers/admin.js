@@ -1,5 +1,6 @@
 // admin.js
 const { Markup } = require('telegraf');
+const mongoose = require('mongoose');
 const Category = require('../models/Category');
 const Note = require('../models/Note');
 const sendNote = require('../utils/sendNote');
@@ -14,13 +15,13 @@ const linkRegex = /(https?:\/\/[^\s]+)/g;
 async function showAdminMenu(ctx) {
   try {
     const categories = await Category.find().lean();
-    const buttons = categories.map(cat => [Markup.button.callback(cat.name, `cat_${cat._id}`)]);
-    buttons.push([Markup.button.callback('➕ Add Category', 'add_category')]);
-    buttons.push([Markup.button.callback('📝 Add Note', 'add_note')]);
-    buttons.push([Markup.button.callback('✏️ Edit Note', 'edit_note')]);
-    buttons.push([Markup.button.callback('❌ Delete Category', 'delete_category')]);
-    buttons.push([Markup.button.callback('🗑 Delete Note', 'delete_note')]);
-
+    const buttons = [
+      [Markup.button.callback('➕ Add Category', 'add_category')],
+      [Markup.button.callback('📝 Add Note', 'add_note')],
+      [Markup.button.callback('✏️ Edit Note', 'edit_note')],
+      [Markup.button.callback('❌ Delete Category', 'delete_category')],
+      [Markup.button.callback('🗑 Delete Note', 'delete_note')]
+    ];
     return ctx.reply('📋 Admin Menu:', Markup.inlineKeyboard(buttons));
   } catch (err) {
     console.error('Error in showAdminMenu:', err);
@@ -36,19 +37,7 @@ async function handleAdminActions(ctx) {
       const data = ctx.callbackQuery.data;
 
       if (data.startsWith('cat_')) {
-        const categoryId = data.replace('cat_', '');
-        const notes = await Note.find({ category: categoryId }).lean();
-
-        if (notes.length === 0) {
-          await ctx.reply('No notes found in this category.');
-        } else {
-          for (const note of notes) {
-            await sendNote(ctx, note);
-          }
-        }
-        await showAdminMenu(ctx);
-        return ctx.answerCbQuery();
-
+        return ctx.answerCbQuery(); // In admin mode, we ignore category viewing
       } else if (data === 'add_category') {
         step[chatId] = 'awaiting_category_name';
         return ctx.reply('🆕 Send the category name:');
@@ -91,8 +80,9 @@ async function handleAdminActions(ctx) {
 
       } else if (data.startsWith('edit_note_')) {
         const noteId = data.replace('edit_note_', '');
-        const note = await Note.findById(noteId).lean();
+        if (!mongoose.Types.ObjectId.isValid(noteId)) return ctx.reply('❌ Invalid note ID.');
 
+        const note = await Note.findById(noteId).lean();
         if (!note) return ctx.reply('Note not found.');
 
         editingNote[chatId] = { ...note };
