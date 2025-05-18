@@ -52,6 +52,7 @@ async function handleAdminActions(ctx) {
       } else if (data === 'add_note') {
         const categories = await Category.find().lean();
         if (categories.length === 0) {
+	  await showAdminMenu(ctx);
           return ctx.reply('No categories found. Add a category first.');
         }
         const buttons = categories.map(cat => [Markup.button.callback(cat.name, `note_cat_${cat._id}`)]);
@@ -77,11 +78,13 @@ async function handleAdminActions(ctx) {
         await Note.deleteMany({ category: categoryId });
         await Category.findByIdAndDelete(categoryId);
         step[chatId] = null;
+	await showAdminMenu(ctx);
         return ctx.reply('✅ Category and its notes deleted.');
 
       } else if (data === 'delete_note') {
         const categories = await Category.find().lean();
         if (categories.length === 0) {
+	  await showAdminMenu(ctx);
           return ctx.reply('No categories found.');
         }
         const buttons = categories.map(cat => [Markup.button.callback(cat.name, `del_note_cat_${cat._id}`)]);
@@ -94,6 +97,7 @@ async function handleAdminActions(ctx) {
 
         if (notes.length === 0) {
           step[chatId] = null;
+	  await showAdminMenu(ctx);
           return ctx.reply('No notes found in this category.');
         }
 
@@ -110,6 +114,7 @@ async function handleAdminActions(ctx) {
         const noteId = data.replace('del_note_', '');
         await Note.findByIdAndDelete(noteId);
         step[chatId] = null;
+	await showAdminMenu(ctx);
         return ctx.reply('✅ Note deleted.');
       }
 
@@ -124,6 +129,7 @@ async function handleAdminActions(ctx) {
         }
         await Category.create({ name: categoryName });
         step[chatId] = null;
+	await showAdminMenu(ctx);
         return ctx.reply('✅ Category added.');
 
       } else if (step[chatId] === 'awaiting_note_content') {
@@ -147,6 +153,7 @@ async function handleAdminActions(ctx) {
             await Note.create(noteData);
             step[chatId] = null;
             tempData[chatId] = {};
+	    await showAdminMenu(ctx);
             return ctx.reply('✅ Note saved.');
           }
           tempData[chatId].text += (tempData[chatId].text ? '\n' : '') + message.text;
