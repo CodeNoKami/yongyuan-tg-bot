@@ -82,9 +82,18 @@ bot.on('message', async (ctx) => {
 });
 
 // Start bot
-bot.launch()
-  .then(() => console.log('🚀 Bot started'))
-  .catch(console.error);
+bot.telegram.deleteWebhook()
+  .then(() => {
+    console.log('✅ Webhook deleted');
+    return bot.launch();
+  })
+  .then(() => {
+    console.log('🚀 Bot started with polling');
+  })
+  .catch((err) => {
+    console.error('❌ Error starting bot:', err);
+  });
+
 
 // Graceful shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
