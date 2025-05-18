@@ -80,6 +80,7 @@ async function handleAdminActions(ctx) {
 
       } else if (data.startsWith('edit_note_')) {
         const noteId = data.replace('edit_note_', '');
+	console.log(noteId);
         if (!mongoose.Types.ObjectId.isValid(noteId)) return ctx.reply('❌ Invalid note ID.');
 
         const note = await Note.findById(noteId).lean();
