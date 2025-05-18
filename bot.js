@@ -6,7 +6,8 @@ const Category = require('./models/Category');
 const Note = require('./models/Note');
 
 const { showAdminMenu, handleAdminActions } = require('./handlers/admin');
-const { handleUserCommands, handleUserCategory } = require('./handlers/user');
+// renamed user handlers:
+const { showUserMenu, handleUserActions } = require('./handlers/user');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_ID;
@@ -16,7 +17,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Middleware: mark admin users
+// Middleware to mark admin users
 bot.use((ctx, next) => {
   ctx.isAdmin = ctx.from && ctx.from.id.toString() === ADMIN_ID;
   return next();
@@ -35,7 +36,7 @@ bot.start(async (ctx) => {
         }
       });
     } else {
-      await handleUserCommands(ctx);
+      await showUserMenu(ctx); // renamed here
     }
   } catch (err) {
     console.error('Error in /start handler:', err);
@@ -53,13 +54,13 @@ bot.on('callback_query', async (ctx) => {
       if (data === 'admin_menu') {
         await showAdminMenu(ctx);
       } else if (data === 'user_menu') {
-        await handleUserCommands(ctx);
+        await showUserMenu(ctx); // renamed here
       } else {
         await handleAdminActions(ctx);
       }
     } else {
       if (data.startsWith('user_cat_')) {
-        await handleUserCategory(ctx);
+        await handleUserActions(ctx);  // renamed here
       } else {
         await ctx.answerCbQuery('Unauthorized action.', { show_alert: true });
       }
@@ -75,7 +76,6 @@ bot.on('message', async (ctx) => {
     if (ctx.isAdmin) {
       await handleAdminActions(ctx);
     }
-    // Add user text message handling here if needed
   } catch (err) {
     console.error('Error in message handler:', err);
   }
