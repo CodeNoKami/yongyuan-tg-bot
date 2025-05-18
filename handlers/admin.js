@@ -7,6 +7,12 @@ const sendNote = require('../utils/sendNote');
 const step = {};
 const tempData = {};
 
+function extractLinks(text) {
+  const linkRegex = /(https?:\/\/[^
+\s]+)/g;
+  return text.match(linkRegex) || [];
+}
+
 async function showAdminMenu(ctx) {
   try {
     const categories = await Category.find().lean();
@@ -36,7 +42,6 @@ async function handleAdminActions(ctx) {
 
         if (notes.length === 0) {
           await ctx.reply('No notes found in this category.');
-		
         } else {
           for (const note of notes) {
             await sendNote(ctx, note);
@@ -142,7 +147,8 @@ async function handleAdminActions(ctx) {
         const message = ctx.message;
         if (message.text) {
           if (message.text === '/done') {
-            const { text, links, fileIds, photoIds } = tempData[chatId];
+            const { text, fileIds, photoIds } = tempData[chatId];
+            const links = extractLinks(text);
             const noteData = {
               category: categoryId,
               text,
@@ -157,9 +163,7 @@ async function handleAdminActions(ctx) {
             return ctx.reply('✅ Note saved.');
           }
           tempData[chatId].text += (tempData[chatId].text ? '\n' : '') + message.text;
-          if (message.entities?.some(e => e.type === 'url')) {
-            tempData[chatId].links.push(message.text);
-          }
+
         } else if (message.document) {
           tempData[chatId].fileIds.push(message.document.file_id);
         } else if (message.photo) {
