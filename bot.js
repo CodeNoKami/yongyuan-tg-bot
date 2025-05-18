@@ -16,13 +16,13 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Middleware to mark admin users
+// Middleware: mark admin users
 bot.use((ctx, next) => {
   ctx.isAdmin = ctx.from && ctx.from.id.toString() === ADMIN_ID;
   return next();
 });
 
-// /start command handler
+// /start handler
 bot.start(async (ctx) => {
   try {
     if (ctx.isAdmin) {
@@ -47,6 +47,7 @@ bot.start(async (ctx) => {
 bot.on('callback_query', async (ctx) => {
   try {
     const data = ctx.callbackQuery.data;
+    console.log(`[Callback] User: ${ctx.from.id} | Data: ${data}`);
 
     if (ctx.isAdmin) {
       if (data === 'admin_menu') {
@@ -74,17 +75,17 @@ bot.on('message', async (ctx) => {
     if (ctx.isAdmin) {
       await handleAdminActions(ctx);
     }
-    // You can add user text message handling here if needed
+    // Add user text message handling here if needed
   } catch (err) {
     console.error('Error in message handler:', err);
   }
 });
 
-// Start the bot
+// Start bot
 bot.launch()
   .then(() => console.log('🚀 Bot started'))
   .catch(console.error);
 
-// Graceful stop
+// Graceful shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
