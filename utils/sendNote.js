@@ -1,51 +1,68 @@
-const escapeMarkdownV2 = (text) => {
+function escapeMarkdownV2(text) {
   if (!text) return '';
-  return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
-};
+  return text.replace(/[-_[\]()~`>#+=|{}.!\\]/g, '\\$&');
+}
 
 module.exports = async function sendNote(ctx, note) {
   try {
-    const { text, link, photoId, fileId } = note;
+    let hasContent = false;
 
-    // Send all photos
-    if (Array.isArray(photoId) && photoId.length > 0) {
-      for (const pid of photoId) {
-        await ctx.replyWithPhoto(pid);
+    if (note.photoId) {
+      if (Array.isArray(note.photoId)) {
+        for (const pid of note.photoId) {
+          await ctx.replyWithPhoto(pid);
+          hasContent = true;
+        }
+      } else {
+        await ctx.replyWithPhoto(note.photoId);
+        hasContent = true;
       }
     }
 
-    // Send all files
-    if (Array.isArray(fileId) && fileId.length > 0) {
-      for (const fid of fileId) {
-        await ctx.replyWithDocument(fid);
+    if (note.fileId) {
+      if (Array.isArray(note.fileId)) {
+        for (const fid of note.fileId) {
+          await ctx.replyWithDocument(fid);
+          hasContent = true;
+        }
+      } else {
+        await ctx.replyWithDocument(note.fileId);
+        hasContent = true;
       }
     }
 
-    // Send all links
-    if (Array.isArray(link) && link.length > 0) {
-      for (const lnk of link) {
-        await ctx.reply(`🔗 ${escapeMarkdownV2(lnk)}`, { parse_mode: 'MarkdownV2' });
+    if (note.link) {
+      if (Array.isArray(note.link)) {
+        for (const lnk of note.link) {
+          await ctx.reply(`🔗 ${escapeMarkdownV2(lnk)}`, { parse_mode: 'MarkdownV2' });
+          hasContent = true;
+        }
+      } else {
+        await ctx.reply(`🔗 ${escapeMarkdownV2(note.link)}`, { parse_mode: 'MarkdownV2' });
+        hasContent = true;
       }
     }
 
-    // Send all texts
-    if (Array.isArray(text) && text.length > 0) {
-      for (const t of text) {
-        await ctx.reply(escapeMarkdownV2(t), { parse_mode: 'MarkdownV2' });
+    if (note.text) {
+      if (Array.isArray(note.text)) {
+        for (const t of note.text) {
+          await ctx.reply(escapeMarkdownV2(t), { parse_mode: 'MarkdownV2' });
+          hasContent = true;
+        }
+      } else {
+        await ctx.reply(escapeMarkdownV2(note.text), { parse_mode: 'MarkdownV2' });
+        hasContent = true;
       }
     }
 
-    // Fallback: if no content exists
-    if (
-      (!Array.isArray(photoId) || photoId.length === 0) &&
-      (!Array.isArray(fileId) || fileId.length === 0) &&
-      (!Array.isArray(link) || link.length === 0) &&
-      (!Array.isArray(text) || text.length === 0)
-    ) {
+    if (!hasContent) {
       await ctx.reply('⚠️ This note has no content.');
     }
+
+    return hasContent; // return true if something was sent, else false
   } catch (err) {
     console.error('Error sending note:', err);
     await ctx.reply('❌ Failed to send note.');
+    return false;
   }
 };

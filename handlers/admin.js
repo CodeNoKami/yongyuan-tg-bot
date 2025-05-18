@@ -36,11 +36,13 @@ async function handleAdminActions(ctx) {
 
         if (notes.length === 0) {
           await ctx.reply('No notes found in this category.');
+		
         } else {
           for (const note of notes) {
             await sendNote(ctx, note);
           }
         }
+	await showAdminMenu(ctx);
         return ctx.answerCbQuery();
 
       } else if (data === 'add_category') {

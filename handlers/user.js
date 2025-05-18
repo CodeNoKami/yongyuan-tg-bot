@@ -36,7 +36,7 @@ async function handleUserActions(ctx) {
           await sendNote(ctx, note); // sendNote must support multi fields (arrays)
         }
       }
-
+      await showUserMenu(ctx);
       return ctx.answerCbQuery();
     }
 
