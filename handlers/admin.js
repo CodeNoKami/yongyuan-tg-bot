@@ -14,19 +14,11 @@ async function showAdminMenu(ctx) {
   try {
     const categories = await Category.find().lean();
     const buttons = categories.map(cat => [Markup.button.callback(cat.name, `cat_${cat._id}`)]);
-<<<<<<< HEAD
-    buttons.push([Markup.button.callback('➕ Add Category', 'add_category')]);
-    buttons.push([Markup.button.callback('📝 Add Note', 'add_note')]);
-    buttons.push([Markup.button.callback('❌ Delete Category', 'delete_category')]);
-    buttons.push([Markup.button.callback('🗑 Delete Note', 'delete_note')]);
-
-=======
     buttons.push([Markup.button.callback('➕ ခေါင်းစဥ်အသစ်ထည့်မည်', 'add_category')]);
     buttons.push([Markup.button.callback('📝 မှတ်တမ်းအသစ်ထည့်မည်', 'add_note')]);
     buttons.push([Markup.button.callback('❌ ခေါင်းစဥ်ဖျက်မည်', 'delete_category')]);
     buttons.push([Markup.button.callback('🗑 မှတ်တမ်းဖျက်မည် ', 'delete_note')]);
     buttons.push([Markup.button.callback('🔍 မှတ်တမ်းများကို ရှာဖွေမည်', 'search_note')]);
->>>>>>> eb1aae4 (Add searchNotes feature)
     return ctx.reply('📋 Admin Menu:', Markup.inlineKeyboard(buttons));
   } catch (err) {
     console.error('Error in showAdminMenu:', err);
@@ -44,10 +36,6 @@ async function handleAdminActions(ctx) {
       if (data.startsWith('cat_')) {
         const categoryId = data.replace('cat_', '');
         const notes = await Note.find({ category: categoryId }).lean();
-<<<<<<< HEAD
-
-=======
->>>>>>> eb1aae4 (Add searchNotes feature)
         if (notes.length === 0) {
           await ctx.reply('No notes found in this category.');
         } else {
@@ -55,13 +43,8 @@ async function handleAdminActions(ctx) {
             await sendNote(ctx, note);
           }
         }
-<<<<<<< HEAD
-        await showAdminMenu(ctx);
-        return ctx.answerCbQuery();
-=======
         await ctx.answerCbQuery();
         return showAdminMenu(ctx);
->>>>>>> eb1aae4 (Add searchNotes feature)
 
       } else if (data === 'add_category') {
         step[chatId] = 'awaiting_category_name';
@@ -96,24 +79,14 @@ async function handleAdminActions(ctx) {
         await Note.deleteMany({ category: categoryId });
         await Category.findByIdAndDelete(categoryId);
         step[chatId] = null;
-<<<<<<< HEAD
-        await showAdminMenu(ctx);
-        return ctx.reply('✅ Category and its notes deleted.');
-=======
         await ctx.reply('✅ Category and its notes deleted.');
         return showAdminMenu(ctx);
->>>>>>> eb1aae4 (Add searchNotes feature)
 
       } else if (data === 'delete_note') {
         const categories = await Category.find().lean();
         if (categories.length === 0) {
-<<<<<<< HEAD
-          await showAdminMenu(ctx);
-          return ctx.reply('No categories found.');
-=======
           await ctx.reply('No categories found.');
           return showAdminMenu(ctx);
->>>>>>> eb1aae4 (Add searchNotes feature)
         }
         const buttons = categories.map(cat => [Markup.button.callback(cat.name, `del_note_cat_${cat._id}`)]);
         step[chatId] = 'awaiting_delete_note_category';
@@ -122,21 +95,11 @@ async function handleAdminActions(ctx) {
       } else if (data.startsWith('del_note_cat_')) {
         const categoryId = data.replace('del_note_cat_', '');
         const notes = await Note.find({ category: categoryId }).lean();
-<<<<<<< HEAD
-
-        if (notes.length === 0) {
-          step[chatId] = null;
-          await showAdminMenu(ctx);
-          return ctx.reply('No notes found in this category.');
-        }
-
-=======
         if (notes.length === 0) {
           step[chatId] = null;
           await ctx.reply('No notes found in this category.');
           return showAdminMenu(ctx);
         }
->>>>>>> eb1aae4 (Add searchNotes feature)
         const buttons = notes.map(note => {
           const title = note.text ? (note.text.length > 20 ? note.text.slice(0, 20) + '...' : note.text) : 'Note';
           return [Markup.button.callback(title, `del_note_${note._id}`)];
@@ -145,28 +108,16 @@ async function handleAdminActions(ctx) {
         tempData[chatId] = { notes, categoryId };
         return ctx.reply('Select note to delete:', Markup.inlineKeyboard(buttons));
 
-<<<<<<< HEAD
-        step[chatId] = 'awaiting_delete_note';
-        tempData[chatId] = { notes, categoryId };
-        return ctx.reply('Select note to delete:', Markup.inlineKeyboard(buttons));
-
-=======
->>>>>>> eb1aae4 (Add searchNotes feature)
       } else if (data.startsWith('del_note_')) {
         const noteId = data.replace('del_note_', '');
         await Note.findByIdAndDelete(noteId);
         step[chatId] = null;
-<<<<<<< HEAD
-        await showAdminMenu(ctx);
-        return ctx.reply('✅ Note deleted.');
-=======
         await ctx.reply('✅ Note deleted.');
         return showAdminMenu(ctx);
 
       } else if (data === 'search_note') {
         step[chatId] = 'awaiting_search_keyword';
         return ctx.reply('🔍 Send a keyword to search notes:');
->>>>>>> eb1aae4 (Add searchNotes feature)
       }
 
       return ctx.answerCbQuery();
@@ -186,15 +137,8 @@ async function handleAdminActions(ctx) {
       }
 
       if (step[chatId] === 'awaiting_category_name') {
-<<<<<<< HEAD
-        const categoryName = ctx.message.text?.trim();
-        if (!categoryName) {
-          return ctx.reply('Category name cannot be empty. Please send a valid name.');
-        }
-=======
         const categoryName = messageText?.trim();
         if (!categoryName) return ctx.reply('Category name cannot be empty. Please send a valid name.');
->>>>>>> eb1aae4 (Add searchNotes feature)
         await Category.create({ name: categoryName });
         step[chatId] = null;
         await ctx.reply('✅ Category added.');
@@ -209,40 +153,6 @@ async function handleAdminActions(ctx) {
         const message = ctx.message;
         if (message.text) {
           if (message.text === '/done') {
-<<<<<<< HEAD
-            const { text, links, fileIds, photoIds } = tempData[chatId];
-            const noteData = {
-              category: categoryId,
-              text,
-              links,
-              fileIds,
-              photoIds
-            };
-            await Note.create(noteData);
-            step[chatId] = null;
-            tempData[chatId] = {};
-            await showAdminMenu(ctx);
-            return ctx.reply('✅ Note saved.');
-          }
-
-          // Add text to accumulated note text
-          tempData[chatId].text += (tempData[chatId].text ? '\n' : '') + message.text;
-
-          // Extract and accumulate links
-          const foundLinks = message.text.match(linkRegex);
-          if (foundLinks && foundLinks.length > 0) {
-            tempData[chatId].links.push(...foundLinks);
-          }
-        } else if (message.document) {
-          tempData[chatId].fileIds.push(message.document.file_id);
-        } else if (message.photo) {
-          tempData[chatId].photoIds.push(message.photo[message.photo.length - 1].file_id);
-        } else {
-          return ctx.reply('Unsupported message type. Please send text, link, document, or photo.');
-        }
-
-        return ctx.reply('✅ Part added. Continue or type /done to save.');
-=======
             step[chatId] = 'awaiting_note_keywords';
             return ctx.reply('🔖 Add keywords for your note (e.g., keyword1,keyword2):');
           }
@@ -272,7 +182,6 @@ async function handleAdminActions(ctx) {
         tempData[chatId] = {};
         await ctx.reply('✅ Note saved.');
         return showAdminMenu(ctx);
->>>>>>> eb1aae4 (Add searchNotes feature)
       }
     }
   } catch (err) {
