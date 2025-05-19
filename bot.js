@@ -22,8 +22,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Middleware - Identify Admin
 bot.use((ctx, next) => {
-  const userId = ctx.from?.id?.toString();
-  ctx.isAdmin = ADMIN_IDS.includes(userId);
+  ctx.isAdmin = ADMIN_IDS.includes(ctx.from?.id?.toString());
   return next();
 });
 
