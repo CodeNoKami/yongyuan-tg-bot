@@ -12,7 +12,8 @@ const { showUserMenu, handleUserActions } = require('./handlers/user');
 
 // Init bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const ADMIN_ID = process.env.ADMIN_ID;
+const ADMIN_IDS = process.env.ADMIN_IDS.split(',');
+
 
 // MongoDB Connect
 mongoose.connect(process.env.MONGODB_URI)
@@ -21,7 +22,8 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Middleware - Identify Admin
 bot.use((ctx, next) => {
-  ctx.isAdmin = ctx.from?.id?.toString() === ADMIN_ID;
+  const userId = ctx.from?.id?.toString();
+  ctx.isAdmin = ADMIN_IDS.includes(userId);
   return next();
 });
 
