@@ -3,7 +3,7 @@ const Category = require('../models/Category');
 const Note = require('../models/Note');
 const sendNote = require('../utils/sendNote');
 const searchNotesByKeyword = require('../utils/searchNotes');
-const getAllKeywords = require('../utils/getAllKeywords');
+const getAllKeywords = require('../utils/availableKeywords');
 
 async function showUserMenu(ctx) {
   try {
