@@ -9,7 +9,11 @@ const NoteSchema = new mongoose.Schema({
     text: String,
     links: [String],
     fileIds: [String],
-    photoIds: [String]
+    photoIds: [String],
+    keywords: {
+        type: [String],
+        default: []
+    }
 }, {
     timestamps: true // Adds createdAt and updatedAt fields
 });
