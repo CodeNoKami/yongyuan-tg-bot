@@ -108,7 +108,7 @@ async function handleAdminActions(ctx) {
         await ctx.reply('✅ Note deleted.');
         return showAdminMenu(ctx);
 
-      } else if (data === 'search_note') {
+      } else if (data === 'search_note' || ctx.message.text === "/search") {
         step[chatId] = 'awaiting_search_keyword';
         return ctx.reply('🔍 Send a keyword to search notes:');
       }
@@ -124,8 +124,8 @@ async function handleAdminActions(ctx) {
         return ctx.reply(`🔑 Available keywords:\n${formatted}`, { parse_mode: 'MarkdownV2' });
       }
 
-      if ((messageText?.startsWith('/search') || step[chatId] === 'awaiting_search_keyword') && step[chatId] !== 'awaiting_note_keywords') {
-        const keyword = messageText.split(' ')[1] || messageText;
+      if ((step[chatId] === 'awaiting_search_keyword') && step[chatId] !== 'awaiting_note_keywords') {
+        const keyword = messageText;
         if (!keyword) return ctx.reply('❗️Please provide a keyword.');
         const results = await searchNotesByKeyword(keyword);
         if (!results.length) return ctx.reply('🔍 No notes found for this keyword.');
