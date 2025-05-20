@@ -4,6 +4,7 @@ const Note = require('../models/Note');
 const sendNote = require('../utils/sendNote');
 const searchNotesByKeyword = require('../utils/searchNotes');
 const getAllKeywords = require('../utils/availableKeywords');
+const escapeMarkdownV2 = require('../utils/escapeMarkdownV2');
 
 const step = {};
 const tempData = {};
@@ -14,11 +15,11 @@ async function showAdminMenu(ctx) {
     const categories = await Category.find().lean();
     const buttons = categories.map(cat => [Markup.button.callback(cat.name, `cat_${cat._id}`)]);
     buttons.push(
-      [Markup.button.callback('➕ ခေါင်းစဥ်အသစ်ထည့်မည်', 'add_category')],
-      [Markup.button.callback('📝 မှတ်တမ်းအသစ်ထည့်မည်', 'add_note')],
-      [Markup.button.callback('❌ ခေါင်းစဥ်ဖျက်မည်', 'delete_category')],
-      [Markup.button.callback('🗑 မှတ်တမ်းဖျက်မည် ', 'delete_note')],
-      [Markup.button.callback('🔍 မှတ်တမ်းများကို ရှာဖွေမည်', 'search_note')]
+      [Markup.button.callback('➕ Add New Category', 'add_category')],
+      [Markup.button.callback('📝 Add New Note', 'add_note')],
+      [Markup.button.callback('❌ Delete Category', 'delete_category')],
+      [Markup.button.callback('🗑 Delete Note', 'delete_note')],
+      [Markup.button.callback('🔍 Search Notes', 'search_note')]
     );
     return ctx.reply('📋 Admin Menu:', Markup.inlineKeyboard(buttons));
   } catch (err) {
@@ -118,7 +119,11 @@ async function handleAdminActions(ctx) {
 
       if (messageText === '/available_keywords') {
         const keywords = await getAllKeywords();
-        return ctx.reply(keywords.length ? `🔑 Available keywords:\n${keywords.join(', ')}` : '🚫 No keywords found.');
+        if (!keywords.length) {
+          return ctx.reply('🚫 No keywords found.');
+        }
+        const formatted = keywords.map(k => `\\\`${escapeMarkdownV2(k)}\\\``).join(', ');
+        return ctx.reply(`🔑 Available keywords:\n${formatted}`, { parse_mode: 'MarkdownV2' });
       }
 
       if ((messageText?.startsWith('/search') || step[chatId] === 'awaiting_search_keyword') && step[chatId] !== 'awaiting_note_keywords') {

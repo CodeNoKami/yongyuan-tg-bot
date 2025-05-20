@@ -4,6 +4,7 @@ const Note = require('../models/Note');
 const sendNote = require('../utils/sendNote');
 const searchNotesByKeyword = require('../utils/searchNotes');
 const getAllKeywords = require('../utils/availableKeywords');
+const escapeMarkdownV2 = require('../utils/escapeMarkdownV2');
 
 async function showUserMenu(ctx) {
   try {
@@ -13,8 +14,10 @@ async function showUserMenu(ctx) {
       return ctx.reply('No categories found.');
     }
 
-    const buttons = categories.map(cat => [Markup.button.callback(cat.name, `user_cat_${cat._id}`)]);
-    buttons.push([Markup.button.callback('🔍 မှတ်တမ်းများကို ရှာဖွေမည်', 'search_note')]);
+    const buttons = categories.map(cat => [
+      Markup.button.callback(escapeMarkdownV2(cat.name), `user_cat_${cat._id}`)
+    ]);
+    buttons.push([Markup.button.callback('🔍 Search Notes', 'search_note')]);
 
     return ctx.reply('📁 Choose a category or search notes:', Markup.inlineKeyboard(buttons));
   } catch (err) {
@@ -65,7 +68,8 @@ async function handleUserActions(ctx) {
           return ctx.reply('🚫 No keywords found.');
         }
 
-        return ctx.reply(`🔑 Available keywords:\n${keywords.join(', ')}`);
+        const formatted = keywords.map(k => `\\`${escapeMarkdownV2(k)}\\``).join(', ');
+        return ctx.reply(`🔑 Available keywords:\n${formatted}`, { parse_mode: 'MarkdownV2' });
       }
 
       // Handle search keyword if user is in search step
