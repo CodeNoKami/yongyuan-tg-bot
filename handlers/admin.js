@@ -2,7 +2,6 @@ const { Markup } = require('telegraf');
 const Category = require('../models/Category');
 const Note = require('../models/Note');
 const sendNote = require('../utils/sendNote');
-const searchNotesByKeyword = require('../utils/searchNotes');
 const getAllKeywords = require('../utils/availableKeywords');
 const escapeMarkdownV2 = require('../utils/escapeMarkdownV2');
 
@@ -108,7 +107,7 @@ async function handleAdminActions(ctx) {
         await ctx.reply('✅ Note deleted.');
         return showAdminMenu(ctx);
 
-      } else if (data === 'search_note' || ctx.message.text === "/search") {
+      } else if (data === 'search_note') {
         step[chatId] = 'awaiting_search_keyword';
         return ctx.reply('🔍 Send a keyword to search notes:');
       }
@@ -124,10 +123,15 @@ async function handleAdminActions(ctx) {
         return ctx.reply(`🔑 Available keywords:\n${formatted}`, { parse_mode: 'MarkdownV2' });
       }
 
-      if ((step[chatId] === 'awaiting_search_keyword') && step[chatId] !== 'awaiting_note_keywords') {
+      if (messageText === '/search') {
+        step[chatId] = 'awaiting_search_keyword';
+        return ctx.reply('🔍 Send a keyword to search notes:');
+      }
+
+      if (step[chatId] === 'awaiting_search_keyword') {
         const keyword = messageText;
         if (!keyword) return ctx.reply('❗️Please provide a keyword.');
-        const results = await searchNotesByKeyword(keyword);
+        const results = await Note.find({ keywords: { $regex: keyword, $options: 'i' } });
         if (!results.length) return ctx.reply('🔍 No notes found for this keyword.');
         for (const note of results) await sendNote(ctx, note);
         step[chatId] = null;

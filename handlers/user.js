@@ -2,7 +2,6 @@ const { Markup } = require('telegraf');
 const Category = require('../models/Category');
 const Note = require('../models/Note');
 const sendNote = require('../utils/sendNote');
-const searchNotesByKeyword = require('../utils/searchNotes');
 const getAllKeywords = require('../utils/availableKeywords');
 const escapeMarkdownV2 = require('../utils/escapeMarkdownV2');
 
@@ -45,9 +44,9 @@ async function handleUserActions(ctx) {
         await showUserMenu(ctx);
         return ctx.answerCbQuery();
 
-      } else if (data === 'search_note' || ctx.message.text === "/search") {
+      } else if (data === 'search_note') {
         userSearchStep[ctx.from.id] = 'awaiting_search_keyword';
-        await ctx.reply('Please enter the keyword to search for notes:');
+        await ctx.reply('🔍 Send a keyword to search notes:');
         return ctx.answerCbQuery();
       }
 
@@ -57,6 +56,11 @@ async function handleUserActions(ctx) {
     if (ctx.message) {
       const userId = ctx.from.id;
       const messageText = ctx.message.text?.trim();
+
+      if (messageText === '/search') {
+        userSearchStep[userId] = 'awaiting_search_keyword';
+        return ctx.reply('🔍 Send a keyword to search notes:');
+      }
 
       // Handle /available_keywords command
       if (messageText === '/available_keywords') {
@@ -76,7 +80,7 @@ async function handleUserActions(ctx) {
           return ctx.reply('❗ Please enter a valid keyword.');
         }
 
-        const results = await searchNotesByKeyword(messageText);
+        const results = await Note.find({ keywords: { $regex: messageText, $options: 'i' } }).lean();
         if (results.length === 0) {
           await ctx.reply('🔍 No notes found for this keyword.');
         } else {
@@ -87,14 +91,6 @@ async function handleUserActions(ctx) {
 
         userSearchStep[userId] = null;
         return showUserMenu(ctx);
-      } else {
-        // Fallback keyword search for users not in search state
-        const keyword = messageText;
-        const results = await searchNotesByKeyword(keyword);
-
-        if (!results.length) return ctx.reply('🔍 No notes found for this keyword.');
-
-        for (const note of results) await sendNote(ctx, note);
       }
     }
   } catch (err) {
